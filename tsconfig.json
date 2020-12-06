@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": true,
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "target": "es5",
+    "lib": ["es2017"],
+    "typeRoots": ["node_modules/@types"]
+  },
+  "include": ["./**/*"]
+}
