@@ -17,6 +17,8 @@ building right away
 #### Code
 
 ```
+const EasyDynamo = require("EasyDynamo");
+
 // Assume the keys to MyTable are
 // Hash key: myHashKey of type string
 // Range key: myRangeKey of type string
