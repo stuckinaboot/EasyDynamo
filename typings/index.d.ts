@@ -1,26 +1,36 @@
+import AWS from "aws-sdk";
+
 /**
  * Types
+ */
+
+/**
+ * General
  */
 export type EasyDynamoKeyValue = string | number;
 export type EasyDynamoKeys = { [keyName: string]: EasyDynamoKeyValue };
 
+/**
+ * Function parameters
+ */
 export type EasyDynamoConfig = {
   accessKeyId: string;
   secretAccessKey: string;
-  region?: string;
+  region: string;
+  // Include endpoint if you are testing locally with local dynamodb,
+  // e.g. "endpoint": "http://localhost:8000",
+  endpoint?: string;
 };
 
 export type EasyDynamoGetParams = {
   keys: EasyDynamoKeys;
   tableName: string;
-  convertSetsToArrays?: boolean;
 };
 
 export type EasyDynamoUpdateParams = {
   keys: EasyDynamoKeys;
   propsToUpdate: any;
   tableName: string;
-  convertArraysToSets?: boolean;
 };
 
 export type EasyDynamoUpdateAddToSetParams = {
@@ -58,7 +68,6 @@ export type EasyDynamoDecrementValueParams = {
 export type EasyDynamoPutParams = {
   item: EasyDynamoKeys & any;
   tableName: string;
-  convertArraysToSets?: boolean;
 };
 
 export type EasyDynamoDeleteParams = {
@@ -74,7 +83,6 @@ export type EasyDynamoQueryParams = {
   keyName: string;
   value: EasyDynamoKeyValue;
   tableName: string;
-  convertSetsToArrays?: boolean;
   scanBackward?: boolean;
 };
 
@@ -92,3 +100,17 @@ export type EasyDynamoClearTableParams = {
   keyNames: string[];
   tableName: string;
 };
+
+/**
+ * Responses
+ */
+
+export type EasyDynamoGetResponse = (any | null) | AWS.AWSError;
+export type EasyDynamoQueryResponse = any[] | AWS.AWSError;
+// List of items or a single number (if only returning the count)
+export type EasyDynamoQueryOnSecondaryIndexResponse =
+  | (any[] | number)
+  | AWS.AWSError;
+export type EasyDynamoScanResponse = any[] | AWS.AWSError;
+
+export type EasyDynamoDefaultResponse = void | AWS.AWSError;

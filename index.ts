@@ -3,14 +3,19 @@ import {
   EasyDynamoClearTableParams,
   EasyDynamoConfig,
   EasyDynamoDecrementValueParams,
+  EasyDynamoDefaultResponse,
   EasyDynamoDeleteFromSetParams,
   EasyDynamoDeleteParams,
   EasyDynamoGetParams,
+  EasyDynamoGetResponse,
   EasyDynamoIncrementValueParams,
   EasyDynamoPutParams,
   EasyDynamoQueryOnSecondaryIndexParams,
+  EasyDynamoQueryOnSecondaryIndexResponse,
   EasyDynamoQueryParams,
+  EasyDynamoQueryResponse,
   EasyDynamoScanParams,
+  EasyDynamoScanResponse,
   EasyDynamoUpdateAddToSetParams,
   EasyDynamoUpdateParams,
 } from "./typings";
@@ -25,7 +30,16 @@ export class EasyDynamo {
     ddb = new AWS.DynamoDB.DocumentClient();
   }
 
-  get({ keys, tableName, convertSetsToArrays }: EasyDynamoGetParams) {
+  /**
+   * Get an item from a dynamo table
+   * @param {Object} keys keys for the particular item, e.g. { name: "aspyn", github: "stuckinaboot"}
+   * @param {string} tableName table name
+   * @return {Promise<Object>} the item, null if item not found, error if error occurs
+   */
+  async get({
+    keys,
+    tableName,
+  }: EasyDynamoGetParams): Promise<EasyDynamoGetResponse> {
     const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
       TableName: tableName,
       Key: keys,
@@ -40,45 +54,48 @@ export class EasyDynamo {
           }
 
           reject(err);
-        } else {
-          const item = data.Item;
-          if (item == null) {
-            return resolve(null);
-          }
-          if (convertSetsToArrays) {
-            // Convert each set in res to an array
-            Object.keys(item).forEach((key) =>
-              item[key] != null && item[key].wrapperName === "Set"
-                ? (item[key] = item[key].values)
-                : null
-            );
-          }
-          resolve(item);
+          return;
         }
+        const item = data.Item;
+        if (item == null) {
+          return resolve(null);
+        }
+
+        // Convert each set in res to an array
+        Object.keys(item).forEach((key) =>
+          item[key] != null && item[key].wrapperName === "Set"
+            ? (item[key] = item[key].values)
+            : null
+        );
+
+        resolve(item);
       });
     });
   }
 
+  /**
+   * Update an entry in a dynamo table.
+   * Note: this allows adding a new entry (e.g. if the keys
+   * do not already exist in the table)
+   * @return none, or error if error occurs
+   */
   update({
     keys,
     propsToUpdate,
     tableName,
-    convertArraysToSets,
-  }: EasyDynamoUpdateParams) {
+  }: EasyDynamoUpdateParams): Promise<EasyDynamoDefaultResponse> {
     // Remove table keys from object (as update does not accept these)
     Object.keys(keys).forEach((key) => delete propsToUpdate[key]);
 
-    if (convertArraysToSets) {
-      // Convert each array in item to be an AWS set
-      Object.keys(propsToUpdate).forEach((key) =>
-        Array.isArray(propsToUpdate[key])
-          ? propsToUpdate[key].length > 0
-            ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
-            : // Make array null if empty as we can't store empty sets in dynamo
-              (propsToUpdate[key] = null)
-          : null
-      );
-    }
+    // Convert each array in item to be an AWS set
+    Object.keys(propsToUpdate).forEach((key) =>
+      Array.isArray(propsToUpdate[key])
+        ? propsToUpdate[key].length > 0
+          ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
+          : // Make array null if empty as we can't store empty sets in dynamo
+            (propsToUpdate[key] = null)
+        : null
+    );
 
     const expressionAttributeValues = {};
     const expressionAttributeNames = {};
@@ -102,22 +119,26 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, (err, data) => {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
+  /**
+   * Add element to a set in a dynamo table.
+   * @return none, or error if error occurs
+   */
   async updateAddToSet({
     keys,
     setAttrName,
     itemsToInsert,
     tableName,
-  }: EasyDynamoUpdateAddToSetParams) {
+  }: EasyDynamoUpdateAddToSetParams): Promise<EasyDynamoDefaultResponse> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -131,17 +152,23 @@ export class EasyDynamo {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
+  /**
+   * Delete element from a set in a dynamo table.
+   * Note: this function expects a set to currently exist in
+   * the table and will result in an error if the set does not exist
+   * @return none, or error if error occurs
+   */
   async updateDeleteFromSet({
     keys,
     setAttrName,
     itemsToRemove,
     tableName,
-  }: EasyDynamoDeleteFromSetParams) {
+  }: EasyDynamoDeleteFromSetParams): Promise<EasyDynamoDefaultResponse> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -150,38 +177,57 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, (err, data) => {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
+  /**
+   * Increment the value of a particular attribute of a particular entry.
+   * Note: attrNames is the (optionally nested) attribute in this entry. So
+   * an entry that looks like { a : 1 } should have attrNames=["a"] while
+   * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+   * @return none, or error if error occurs
+   */
   async incrementValue({
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoIncrementValueParams) {
+  }: EasyDynamoIncrementValueParams): Promise<EasyDynamoDefaultResponse> {
     return this.updateValueByOne(keys, attrNames, tableName, true);
   }
 
+  /**
+   * Decrement the value of a particular attribute of a particular entry.
+   * Note: attrNames is the (optionally nested) attribute in this entry. So
+   * an entry that looks like { a : 1 } should have attrNames=["a"] while
+   * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+   * @return none, or error if error occurs
+   */
   async decrementValue({
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoDecrementValueParams) {
+  }: EasyDynamoDecrementValueParams): Promise<EasyDynamoDefaultResponse> {
     return this.updateValueByOne(keys, attrNames, tableName, false);
   }
 
+  /**
+   * Update a particular attribute value for an entry by one, in either
+   * positive or negative direction depending on shouldIncrement
+   * @return none, or error if error occurs
+   */
   private async updateValueByOne(
     keys: any,
     attrNames: string[],
     tableName: string,
     shouldIncrement: boolean
-  ) {
+  ): Promise<EasyDynamoDefaultResponse> {
     // Use numbers as attribute name variables since
     let i = 0;
     const expressionAttributeNames = {};
@@ -204,23 +250,27 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, function (err, data) {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
-        } else {
-          resolve(data);
+          return;
         }
+        resolve();
       });
     });
   }
 
-  async put({ item, tableName, convertArraysToSets }: EasyDynamoPutParams) {
-    if (convertArraysToSets) {
-      // Convert each array in item to be an AWS set
-      Object.keys(item).forEach((key) =>
-        Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null
-      );
-    }
+  /**
+   * Add an item to a dynamo table
+   * @return none, or error if error occurs
+   */
+  async put({
+    item,
+    tableName,
+  }: EasyDynamoPutParams): Promise<EasyDynamoDefaultResponse> {
+    Object.keys(item).forEach((key) =>
+      Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null
+    );
 
     const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
       TableName: tableName,
@@ -228,34 +278,45 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.put(params, (err, data) => {
+      ddb.put(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
-  delete({ keys, tableName }: EasyDynamoDeleteParams) {
+  /**
+   * Delete an item from a dynamo table
+   * @return none, or error if error occurs
+   */
+  delete({
+    keys,
+    tableName,
+  }: EasyDynamoDeleteParams): Promise<EasyDynamoDefaultResponse> {
     const params = {
       TableName: tableName,
       Key: keys,
     };
 
     return new Promise((resolve, reject) => {
-      ddb.delete(params, (err, data) => {
+      ddb.delete(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
-  scan({ tableName }: EasyDynamoScanParams) {
+  /**
+   * Scan a dynamo table
+   * @return list of results of scan, or error if error occurs
+   */
+  scan({ tableName }: EasyDynamoScanParams): Promise<EasyDynamoScanResponse> {
     return new Promise((resolve, reject) => {
       ddb.scan({ TableName: tableName }, (err, data) => {
         if (err) {
@@ -267,13 +328,16 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Query a dynamo table
+   * @return list of results of query, or error if error occurs
+   */
   query({
     keyName,
     value,
     tableName,
-    convertSetsToArrays,
     scanBackward,
-  }: EasyDynamoQueryParams) {
+  }: EasyDynamoQueryParams): Promise<EasyDynamoQueryResponse> {
     const params = {
       TableName: tableName,
       KeyConditionExpression: "#key = :id",
@@ -302,24 +366,25 @@ export class EasyDynamo {
         if (items == null) {
           return resolve([]);
         }
-        if (convertSetsToArrays) {
-          // Convert each set in res to an array
-          items.forEach((item) =>
-            Object.keys(item).forEach((key) =>
-              item[key] != null && item[key].wrapperName === "Set"
-                ? (item[key] = item[key].values)
-                : null
-            )
-          );
-          return resolve(items);
-        }
 
-        resolve(data.Items);
+        // Convert each set in res to an array
+        items.forEach((item) =>
+          Object.keys(item).forEach((key) =>
+            item[key] != null && item[key].wrapperName === "Set"
+              ? (item[key] = item[key].values)
+              : null
+          )
+        );
+
+        resolve(items);
       });
     });
   }
 
-  // Returns either an array or a number (if onlyCount is true)
+  /**
+   * Query a dynamo table on its secondary index
+   * @return list of results of query (if onlyCount is undefined or false), number (if onlyCount is true), or error if error occurs
+   */
   queryOnSecondaryIndex({
     indexName,
     keyName,
@@ -327,7 +392,7 @@ export class EasyDynamo {
     tableName,
     onlyCount,
     rangeKey,
-  }: EasyDynamoQueryOnSecondaryIndexParams) {
+  }: EasyDynamoQueryOnSecondaryIndexParams): Promise<EasyDynamoQueryOnSecondaryIndexResponse> {
     const params = {
       TableName: tableName,
       IndexName: indexName,
@@ -372,10 +437,14 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Clear a dynamo table
+   * @return none, or error if error occurs
+   */
   async clearTable({
     tableName,
     keyNames,
-  }: EasyDynamoClearTableParams): Promise<void> {
+  }: EasyDynamoClearTableParams): Promise<EasyDynamoDefaultResponse> {
     const elts: any = await this.scan({ tableName });
     for (const i in elts) {
       const data = {};
