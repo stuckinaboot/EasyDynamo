@@ -77,10 +77,12 @@ var EasyDynamo = /** @class */ (function () {
     }
     /**
      * Get an item from a dynamo table
-     * @return the item, null if item not found, error if error occurs
+     * @param {Object} keys keys for the particular item, e.g. { name: "aspyn", github: "stuckinaboot"}
+     * @param {string} tableName table name
+     * @return {Promise<Object>} the item, null if item not found, error if error occurs
      */
     EasyDynamo.prototype.get = function (_a) {
-        var keys = _a.keys, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays;
+        var keys = _a.keys, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
             var params;
             return __generator(this, function (_b) {
@@ -102,14 +104,12 @@ var EasyDynamo = /** @class */ (function () {
                             if (item == null) {
                                 return resolve(null);
                             }
-                            if (convertSetsToArrays) {
-                                // Convert each set in res to an array
-                                Object.keys(item).forEach(function (key) {
-                                    return item[key] != null && item[key].wrapperName === "Set"
-                                        ? (item[key] = item[key].values)
-                                        : null;
-                                });
-                            }
+                            // Convert each set in res to an array
+                            Object.keys(item).forEach(function (key) {
+                                return item[key] != null && item[key].wrapperName === "Set"
+                                    ? (item[key] = item[key].values)
+                                    : null;
+                            });
                             resolve(item);
                         });
                     })];
@@ -123,20 +123,18 @@ var EasyDynamo = /** @class */ (function () {
      * @return none, or error if error occurs
      */
     EasyDynamo.prototype.update = function (_a) {
-        var keys = _a.keys, propsToUpdate = _a.propsToUpdate, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
+        var keys = _a.keys, propsToUpdate = _a.propsToUpdate, tableName = _a.tableName;
         // Remove table keys from object (as update does not accept these)
         Object.keys(keys).forEach(function (key) { return delete propsToUpdate[key]; });
-        if (convertArraysToSets) {
-            // Convert each array in item to be an AWS set
-            Object.keys(propsToUpdate).forEach(function (key) {
-                return Array.isArray(propsToUpdate[key])
-                    ? propsToUpdate[key].length > 0
-                        ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
-                        : // Make array null if empty as we can't store empty sets in dynamo
-                            (propsToUpdate[key] = null)
-                    : null;
-            });
-        }
+        // Convert each array in item to be an AWS set
+        Object.keys(propsToUpdate).forEach(function (key) {
+            return Array.isArray(propsToUpdate[key])
+                ? propsToUpdate[key].length > 0
+                    ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
+                    : // Make array null if empty as we can't store empty sets in dynamo
+                        (propsToUpdate[key] = null)
+                : null;
+        });
         var expressionAttributeValues = {};
         var expressionAttributeNames = {};
         Object.entries(propsToUpdate).forEach(function (_a) {
@@ -288,16 +286,13 @@ var EasyDynamo = /** @class */ (function () {
      * @return none, or error if error occurs
      */
     EasyDynamo.prototype.put = function (_a) {
-        var item = _a.item, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
+        var item = _a.item, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
             var params;
             return __generator(this, function (_b) {
-                if (convertArraysToSets) {
-                    // Convert each array in item to be an AWS set
-                    Object.keys(item).forEach(function (key) {
-                        return Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null;
-                    });
-                }
+                Object.keys(item).forEach(function (key) {
+                    return Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null;
+                });
                 params = {
                     TableName: tableName,
                     Item: item,
@@ -355,7 +350,7 @@ var EasyDynamo = /** @class */ (function () {
      * @return list of results of query, or error if error occurs
      */
     EasyDynamo.prototype.query = function (_a) {
-        var keyName = _a.keyName, value = _a.value, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays, scanBackward = _a.scanBackward;
+        var keyName = _a.keyName, value = _a.value, tableName = _a.tableName, scanBackward = _a.scanBackward;
         var params = {
             TableName: tableName,
             KeyConditionExpression: "#key = :id",
@@ -382,18 +377,15 @@ var EasyDynamo = /** @class */ (function () {
                 if (items == null) {
                     return resolve([]);
                 }
-                if (convertSetsToArrays) {
-                    // Convert each set in res to an array
-                    items.forEach(function (item) {
-                        return Object.keys(item).forEach(function (key) {
-                            return item[key] != null && item[key].wrapperName === "Set"
-                                ? (item[key] = item[key].values)
-                                : null;
-                        });
+                // Convert each set in res to an array
+                items.forEach(function (item) {
+                    return Object.keys(item).forEach(function (key) {
+                        return item[key] != null && item[key].wrapperName === "Set"
+                            ? (item[key] = item[key].values)
+                            : null;
                     });
-                    return resolve(items);
-                }
-                resolve(data.Items);
+                });
+                resolve(items);
             });
         });
     };

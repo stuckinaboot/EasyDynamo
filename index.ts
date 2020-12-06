@@ -32,7 +32,9 @@ export class EasyDynamo {
 
   /**
    * Get an item from a dynamo table
-   * @return the item, null if item not found, error if error occurs
+   * @param {Object} keys keys for the particular item, e.g. { name: "aspyn", github: "stuckinaboot"}
+   * @param {string} tableName table name
+   * @return {Promise<Object>} the item, null if item not found, error if error occurs
    */
   async get({
     keys,
