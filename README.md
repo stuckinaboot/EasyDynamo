@@ -12,7 +12,7 @@ so you can move data back and forth to dynamo effortlessly.
 ## Getting Started
 
 For simplicity, here's example code and example output so you can
-building right away
+building right away (see `./example.js` for the runnable example)
 
 #### Code
 
