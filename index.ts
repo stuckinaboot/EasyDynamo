@@ -6,11 +6,15 @@ import {
   EasyDynamoDeleteFromSetParams,
   EasyDynamoDeleteParams,
   EasyDynamoGetParams,
+  EasyDynamoGetResponse,
   EasyDynamoIncrementValueParams,
   EasyDynamoPutParams,
   EasyDynamoQueryOnSecondaryIndexParams,
+  EasyDynamoQueryOnSecondaryIndexResponse,
   EasyDynamoQueryParams,
+  EasyDynamoQueryResponse,
   EasyDynamoScanParams,
+  EasyDynamoScanResponse,
   EasyDynamoUpdateAddToSetParams,
   EasyDynamoUpdateParams,
 } from "./typings";
@@ -25,7 +29,11 @@ export class EasyDynamo {
     ddb = new AWS.DynamoDB.DocumentClient();
   }
 
-  get({ keys, tableName, convertSetsToArrays }: EasyDynamoGetParams) {
+  get({
+    keys,
+    tableName,
+    convertSetsToArrays,
+  }: EasyDynamoGetParams): EasyDynamoGetResponse {
     const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
       TableName: tableName,
       Key: keys,
@@ -64,7 +72,7 @@ export class EasyDynamo {
     propsToUpdate,
     tableName,
     convertArraysToSets,
-  }: EasyDynamoUpdateParams) {
+  }: EasyDynamoUpdateParams): Promise<void> {
     // Remove table keys from object (as update does not accept these)
     Object.keys(keys).forEach((key) => delete propsToUpdate[key]);
 
@@ -102,12 +110,12 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, (err, data) => {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
@@ -214,7 +222,11 @@ export class EasyDynamo {
     });
   }
 
-  async put({ item, tableName, convertArraysToSets }: EasyDynamoPutParams) {
+  async put({
+    item,
+    tableName,
+    convertArraysToSets,
+  }: EasyDynamoPutParams): Promise<void> {
     if (convertArraysToSets) {
       // Convert each array in item to be an AWS set
       Object.keys(item).forEach((key) =>
@@ -228,34 +240,34 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.put(params, (err, data) => {
+      ddb.put(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
-  delete({ keys, tableName }: EasyDynamoDeleteParams) {
+  delete({ keys, tableName }: EasyDynamoDeleteParams): Promise<void> {
     const params = {
       TableName: tableName,
       Key: keys,
     };
 
     return new Promise((resolve, reject) => {
-      ddb.delete(params, (err, data) => {
+      ddb.delete(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
 
-  scan({ tableName }: EasyDynamoScanParams) {
+  scan({ tableName }: EasyDynamoScanParams): EasyDynamoScanResponse {
     return new Promise((resolve, reject) => {
       ddb.scan({ TableName: tableName }, (err, data) => {
         if (err) {
@@ -273,7 +285,7 @@ export class EasyDynamo {
     tableName,
     convertSetsToArrays,
     scanBackward,
-  }: EasyDynamoQueryParams) {
+  }: EasyDynamoQueryParams): EasyDynamoQueryResponse {
     const params = {
       TableName: tableName,
       KeyConditionExpression: "#key = :id",
@@ -327,7 +339,7 @@ export class EasyDynamo {
     tableName,
     onlyCount,
     rangeKey,
-  }: EasyDynamoQueryOnSecondaryIndexParams) {
+  }: EasyDynamoQueryOnSecondaryIndexParams): EasyDynamoQueryOnSecondaryIndexResponse {
     const params = {
       TableName: tableName,
       IndexName: indexName,

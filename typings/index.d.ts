@@ -1,9 +1,16 @@
 /**
  * Types
  */
+
+/**
+ * General
+ */
 export type EasyDynamoKeyValue = string | number;
 export type EasyDynamoKeys = { [keyName: string]: EasyDynamoKeyValue };
 
+/**
+ * Function parameters
+ */
 export type EasyDynamoConfig = {
   accessKeyId: string;
   secretAccessKey: string;
@@ -92,3 +99,13 @@ export type EasyDynamoClearTableParams = {
   keyNames: string[];
   tableName: string;
 };
+
+/**
+ * Responses
+ */
+
+export type EasyDynamoGetResponse = Promise<any>;
+export type EasyDynamoQueryResponse = Promise<any[]>;
+// List of items or a single number (if only returning the count)
+export type EasyDynamoQueryOnSecondaryIndexResponse = Promise<any[] | number>;
+export type EasyDynamoScanResponse = Promise<any[]>;
