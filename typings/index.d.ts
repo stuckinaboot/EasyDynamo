@@ -22,14 +22,12 @@ export type EasyDynamoConfig = {
 export type EasyDynamoGetParams = {
   keys: EasyDynamoKeys;
   tableName: string;
-  convertSetsToArrays?: boolean;
 };
 
 export type EasyDynamoUpdateParams = {
   keys: EasyDynamoKeys;
   propsToUpdate: any;
   tableName: string;
-  convertArraysToSets?: boolean;
 };
 
 export type EasyDynamoUpdateAddToSetParams = {
@@ -67,7 +65,6 @@ export type EasyDynamoDecrementValueParams = {
 export type EasyDynamoPutParams = {
   item: EasyDynamoKeys & any;
   tableName: string;
-  convertArraysToSets?: boolean;
 };
 
 export type EasyDynamoDeleteParams = {
@@ -83,7 +80,6 @@ export type EasyDynamoQueryParams = {
   keyName: string;
   value: EasyDynamoKeyValue;
   tableName: string;
-  convertSetsToArrays?: boolean;
   scanBackward?: boolean;
 };
 

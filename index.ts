@@ -37,7 +37,6 @@ export class EasyDynamo {
   async get({
     keys,
     tableName,
-    convertSetsToArrays,
   }: EasyDynamoGetParams): Promise<EasyDynamoGetResponse> {
     const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
       TableName: tableName,
@@ -59,14 +58,14 @@ export class EasyDynamo {
         if (item == null) {
           return resolve(null);
         }
-        if (convertSetsToArrays) {
-          // Convert each set in res to an array
-          Object.keys(item).forEach((key) =>
-            item[key] != null && item[key].wrapperName === "Set"
-              ? (item[key] = item[key].values)
-              : null
-          );
-        }
+
+        // Convert each set in res to an array
+        Object.keys(item).forEach((key) =>
+          item[key] != null && item[key].wrapperName === "Set"
+            ? (item[key] = item[key].values)
+            : null
+        );
+
         resolve(item);
       });
     });
@@ -82,22 +81,19 @@ export class EasyDynamo {
     keys,
     propsToUpdate,
     tableName,
-    convertArraysToSets,
   }: EasyDynamoUpdateParams): Promise<EasyDynamoDefaultResponse> {
     // Remove table keys from object (as update does not accept these)
     Object.keys(keys).forEach((key) => delete propsToUpdate[key]);
 
-    if (convertArraysToSets) {
-      // Convert each array in item to be an AWS set
-      Object.keys(propsToUpdate).forEach((key) =>
-        Array.isArray(propsToUpdate[key])
-          ? propsToUpdate[key].length > 0
-            ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
-            : // Make array null if empty as we can't store empty sets in dynamo
-              (propsToUpdate[key] = null)
-          : null
-      );
-    }
+    // Convert each array in item to be an AWS set
+    Object.keys(propsToUpdate).forEach((key) =>
+      Array.isArray(propsToUpdate[key])
+        ? propsToUpdate[key].length > 0
+          ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
+          : // Make array null if empty as we can't store empty sets in dynamo
+            (propsToUpdate[key] = null)
+        : null
+    );
 
     const expressionAttributeValues = {};
     const expressionAttributeNames = {};
@@ -269,14 +265,10 @@ export class EasyDynamo {
   async put({
     item,
     tableName,
-    convertArraysToSets,
   }: EasyDynamoPutParams): Promise<EasyDynamoDefaultResponse> {
-    if (convertArraysToSets) {
-      // Convert each array in item to be an AWS set
-      Object.keys(item).forEach((key) =>
-        Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null
-      );
-    }
+    Object.keys(item).forEach((key) =>
+      Array.isArray(item[key]) ? (item[key] = ddb.createSet(item[key])) : null
+    );
 
     const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
       TableName: tableName,
@@ -342,7 +334,6 @@ export class EasyDynamo {
     keyName,
     value,
     tableName,
-    convertSetsToArrays,
     scanBackward,
   }: EasyDynamoQueryParams): Promise<EasyDynamoQueryResponse> {
     const params = {
@@ -373,19 +364,17 @@ export class EasyDynamo {
         if (items == null) {
           return resolve([]);
         }
-        if (convertSetsToArrays) {
-          // Convert each set in res to an array
-          items.forEach((item) =>
-            Object.keys(item).forEach((key) =>
-              item[key] != null && item[key].wrapperName === "Set"
-                ? (item[key] = item[key].values)
-                : null
-            )
-          );
-          return resolve(items);
-        }
 
-        resolve(data.Items);
+        // Convert each set in res to an array
+        items.forEach((item) =>
+          Object.keys(item).forEach((key) =>
+            item[key] != null && item[key].wrapperName === "Set"
+              ? (item[key] = item[key].values)
+              : null
+          )
+        );
+
+        resolve(items);
       });
     });
   }

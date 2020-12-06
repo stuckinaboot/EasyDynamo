@@ -75,38 +75,53 @@ var EasyDynamo = /** @class */ (function () {
         aws_sdk_1.default.config.update(config);
         ddb = new aws_sdk_1.default.DynamoDB.DocumentClient();
     }
+    /**
+     * Get an item from a dynamo table
+     * @return the item, null if item not found, error if error occurs
+     */
     EasyDynamo.prototype.get = function (_a) {
         var keys = _a.keys, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays;
-        var params = {
-            TableName: tableName,
-            Key: keys,
-        };
-        return new Promise(function (resolve, reject) {
-            ddb.get(params, function (err, data) {
-                if (err) {
-                    if (err.code === AWS_ERROR_ITEM_NOT_FOUND) {
-                        // Resolve null if item was not found
-                        return resolve(null);
-                    }
-                    reject(err);
-                    return;
-                }
-                var item = data.Item;
-                if (item == null) {
-                    return resolve(null);
-                }
-                if (convertSetsToArrays) {
-                    // Convert each set in res to an array
-                    Object.keys(item).forEach(function (key) {
-                        return item[key] != null && item[key].wrapperName === "Set"
-                            ? (item[key] = item[key].values)
-                            : null;
-                    });
-                }
-                resolve(item);
+        return __awaiter(this, void 0, void 0, function () {
+            var params;
+            return __generator(this, function (_b) {
+                params = {
+                    TableName: tableName,
+                    Key: keys,
+                };
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        ddb.get(params, function (err, data) {
+                            if (err) {
+                                if (err.code === AWS_ERROR_ITEM_NOT_FOUND) {
+                                    // Resolve null if item was not found
+                                    return resolve(null);
+                                }
+                                reject(err);
+                                return;
+                            }
+                            var item = data.Item;
+                            if (item == null) {
+                                return resolve(null);
+                            }
+                            if (convertSetsToArrays) {
+                                // Convert each set in res to an array
+                                Object.keys(item).forEach(function (key) {
+                                    return item[key] != null && item[key].wrapperName === "Set"
+                                        ? (item[key] = item[key].values)
+                                        : null;
+                                });
+                            }
+                            resolve(item);
+                        });
+                    })];
             });
         });
     };
+    /**
+     * Update an entry in a dynamo table.
+     * Note: this allows adding a new entry (e.g. if the keys
+     * do not already exist in the table)
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.update = function (_a) {
         var keys = _a.keys, propsToUpdate = _a.propsToUpdate, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
         // Remove table keys from object (as update does not accept these)
@@ -150,6 +165,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Add element to a set in a dynamo table.
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.updateAddToSet = function (_a) {
         var keys = _a.keys, setAttrName = _a.setAttrName, itemsToInsert = _a.itemsToInsert, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
@@ -173,6 +192,12 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Delete element from a set in a dynamo table.
+     * Note: this function expects a set to currently exist in
+     * the table and will result in an error if the set does not exist
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.updateDeleteFromSet = function (_a) {
         var keys = _a.keys, setAttrName = _a.setAttrName, itemsToRemove = _a.itemsToRemove, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
@@ -196,6 +221,13 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Increment the value of a particular attribute of a particular entry.
+     * Note: attrNames is the (optionally nested) attribute in this entry. So
+     * an entry that looks like { a : 1 } should have attrNames=["a"] while
+     * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.incrementValue = function (_a) {
         var keys = _a.keys, attrNames = _a.attrNames, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
@@ -204,6 +236,13 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Decrement the value of a particular attribute of a particular entry.
+     * Note: attrNames is the (optionally nested) attribute in this entry. So
+     * an entry that looks like { a : 1 } should have attrNames=["a"] while
+     * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.decrementValue = function (_a) {
         var keys = _a.keys, attrNames = _a.attrNames, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
@@ -212,6 +251,11 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Update a particular attribute value for an entry by one, in either
+     * positive or negative direction depending on shouldIncrement
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.updateValueByOne = function (keys, attrNames, tableName, shouldIncrement) {
         return __awaiter(this, void 0, void 0, function () {
             var i, expressionAttributeNames, absoluteNestedAttrName, params;
@@ -239,6 +283,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Add an item to a dynamo table
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.put = function (_a) {
         var item = _a.item, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
         return __awaiter(this, void 0, void 0, function () {
@@ -266,6 +314,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Delete an item from a dynamo table
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.delete = function (_a) {
         var keys = _a.keys, tableName = _a.tableName;
         var params = {
@@ -282,6 +334,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Scan a dynamo table
+     * @return list of results of scan, or error if error occurs
+     */
     EasyDynamo.prototype.scan = function (_a) {
         var tableName = _a.tableName;
         return new Promise(function (resolve, reject) {
@@ -294,6 +350,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Query a dynamo table
+     * @return list of results of query, or error if error occurs
+     */
     EasyDynamo.prototype.query = function (_a) {
         var keyName = _a.keyName, value = _a.value, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays, scanBackward = _a.scanBackward;
         var params = {
@@ -337,7 +397,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
-    // Returns either an array or a number (if onlyCount is true)
+    /**
+     * Query a dynamo table on its secondary index
+     * @return list of results of query (if onlyCount is undefined or false), number (if onlyCount is true), or error if error occurs
+     */
     EasyDynamo.prototype.queryOnSecondaryIndex = function (_a) {
         var indexName = _a.indexName, keyName = _a.keyName, value = _a.value, tableName = _a.tableName, onlyCount = _a.onlyCount, rangeKey = _a.rangeKey;
         var params = __assign({ TableName: tableName, IndexName: indexName }, (rangeKey == null
@@ -379,6 +442,10 @@ var EasyDynamo = /** @class */ (function () {
             });
         });
     };
+    /**
+     * Clear a dynamo table
+     * @return none, or error if error occurs
+     */
     EasyDynamo.prototype.clearTable = function (_a) {
         var tableName = _a.tableName, keyNames = _a.keyNames;
         return __awaiter(this, void 0, void 0, function () {
