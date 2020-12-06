@@ -1,3 +1,5 @@
+import AWS from "aws-sdk";
+
 /**
  * Types
  */
@@ -104,8 +106,12 @@ export type EasyDynamoClearTableParams = {
  * Responses
  */
 
-export type EasyDynamoGetResponse = Promise<any | null>;
-export type EasyDynamoQueryResponse = Promise<any[]>;
+export type EasyDynamoGetResponse = (any | null) | AWS.AWSError;
+export type EasyDynamoQueryResponse = any[] | AWS.AWSError;
 // List of items or a single number (if only returning the count)
-export type EasyDynamoQueryOnSecondaryIndexResponse = Promise<any[] | number>;
-export type EasyDynamoScanResponse = Promise<any[]>;
+export type EasyDynamoQueryOnSecondaryIndexResponse =
+  | (any[] | number)
+  | AWS.AWSError;
+export type EasyDynamoScanResponse = any[] | AWS.AWSError;
+
+export type EasyDynamoDefaultResponse = void | AWS.AWSError;

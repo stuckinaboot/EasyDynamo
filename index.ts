@@ -3,6 +3,7 @@ import {
   EasyDynamoClearTableParams,
   EasyDynamoConfig,
   EasyDynamoDecrementValueParams,
+  EasyDynamoDefaultResponse,
   EasyDynamoDeleteFromSetParams,
   EasyDynamoDeleteParams,
   EasyDynamoGetParams,
@@ -33,7 +34,7 @@ export class EasyDynamo {
     keys,
     tableName,
     convertSetsToArrays,
-  }: EasyDynamoGetParams): EasyDynamoGetResponse {
+  }: EasyDynamoGetParams): Promise<EasyDynamoGetResponse> {
     const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
       TableName: tableName,
       Key: keys,
@@ -72,7 +73,7 @@ export class EasyDynamo {
     propsToUpdate,
     tableName,
     convertArraysToSets,
-  }: EasyDynamoUpdateParams): Promise<void> {
+  }: EasyDynamoUpdateParams): Promise<EasyDynamoDefaultResponse> {
     // Remove table keys from object (as update does not accept these)
     Object.keys(keys).forEach((key) => delete propsToUpdate[key]);
 
@@ -125,7 +126,7 @@ export class EasyDynamo {
     setAttrName,
     itemsToInsert,
     tableName,
-  }: EasyDynamoUpdateAddToSetParams): Promise<void> {
+  }: EasyDynamoUpdateAddToSetParams): Promise<EasyDynamoDefaultResponse> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -149,7 +150,7 @@ export class EasyDynamo {
     setAttrName,
     itemsToRemove,
     tableName,
-  }: EasyDynamoDeleteFromSetParams): Promise<void> {
+  }: EasyDynamoDeleteFromSetParams): Promise<EasyDynamoDefaultResponse> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -172,7 +173,7 @@ export class EasyDynamo {
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoIncrementValueParams): Promise<void> {
+  }: EasyDynamoIncrementValueParams): Promise<EasyDynamoDefaultResponse> {
     return this.updateValueByOne(keys, attrNames, tableName, true);
   }
 
@@ -180,7 +181,7 @@ export class EasyDynamo {
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoDecrementValueParams): Promise<void> {
+  }: EasyDynamoDecrementValueParams): Promise<EasyDynamoDefaultResponse> {
     return this.updateValueByOne(keys, attrNames, tableName, false);
   }
 
@@ -189,7 +190,7 @@ export class EasyDynamo {
     attrNames: string[],
     tableName: string,
     shouldIncrement: boolean
-  ): Promise<void> {
+  ): Promise<EasyDynamoDefaultResponse> {
     // Use numbers as attribute name variables since
     let i = 0;
     const expressionAttributeNames = {};
@@ -226,7 +227,7 @@ export class EasyDynamo {
     item,
     tableName,
     convertArraysToSets,
-  }: EasyDynamoPutParams): Promise<void> {
+  }: EasyDynamoPutParams): Promise<EasyDynamoDefaultResponse> {
     if (convertArraysToSets) {
       // Convert each array in item to be an AWS set
       Object.keys(item).forEach((key) =>
@@ -250,7 +251,10 @@ export class EasyDynamo {
     });
   }
 
-  delete({ keys, tableName }: EasyDynamoDeleteParams): Promise<void> {
+  delete({
+    keys,
+    tableName,
+  }: EasyDynamoDeleteParams): Promise<EasyDynamoDefaultResponse> {
     const params = {
       TableName: tableName,
       Key: keys,
@@ -267,7 +271,7 @@ export class EasyDynamo {
     });
   }
 
-  scan({ tableName }: EasyDynamoScanParams): EasyDynamoScanResponse {
+  scan({ tableName }: EasyDynamoScanParams): Promise<EasyDynamoScanResponse> {
     return new Promise((resolve, reject) => {
       ddb.scan({ TableName: tableName }, (err, data) => {
         if (err) {
@@ -285,7 +289,7 @@ export class EasyDynamo {
     tableName,
     convertSetsToArrays,
     scanBackward,
-  }: EasyDynamoQueryParams): EasyDynamoQueryResponse {
+  }: EasyDynamoQueryParams): Promise<EasyDynamoQueryResponse> {
     const params = {
       TableName: tableName,
       KeyConditionExpression: "#key = :id",
@@ -339,7 +343,7 @@ export class EasyDynamo {
     tableName,
     onlyCount,
     rangeKey,
-  }: EasyDynamoQueryOnSecondaryIndexParams): EasyDynamoQueryOnSecondaryIndexResponse {
+  }: EasyDynamoQueryOnSecondaryIndexParams): Promise<EasyDynamoQueryOnSecondaryIndexResponse> {
     const params = {
       TableName: tableName,
       IndexName: indexName,
@@ -387,7 +391,7 @@ export class EasyDynamo {
   async clearTable({
     tableName,
     keyNames,
-  }: EasyDynamoClearTableParams): Promise<void> {
+  }: EasyDynamoClearTableParams): Promise<EasyDynamoDefaultResponse> {
     const elts: any = await this.scan({ tableName });
     for (const i in elts) {
       const data = {};
