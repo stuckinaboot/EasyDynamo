@@ -11,8 +11,8 @@ so you can move data back and forth to dynamo effortlessly.
 
 ## Getting Started
 
-For simplicity, here's example code and example output so you can
-building right away (see `./example.js` for the runnable example)
+**For simplicity, here's example code and output so you can start
+building right away (see `./example.js` for the runnable example)**
 
 #### Code
 
@@ -143,15 +143,6 @@ Get myItem1 after increment nested attribute {
 }
 ```
 
-## Quick pointers
-
-- Look at the example, it should make everything obvious
-- All functions are async
-- For write operations (`put, update, updateAddToSet, incrementValue, etc.`), the return type is promise resolving to void unless an error occurs, in which case
-  the promise will reject with that error
-- For read operations (`get, query, scan, queryOnSecondaryIndex, etc.`), the return type is promise resolving to the item
-  (or null if item is not found), a list of items, a count of the items (if `onlyCount` is true) unless an error occurs, in which case the promise will reject with that error
-
 ## Functions
 
 ```
@@ -168,3 +159,12 @@ updateDeleteFromSet: Delete element from a set in a dynamo table
 incrementValue: Increment the value of a particular attribute of a particular entry
 decrementValue: Decrement the value of a particular attribute of a particular entry.
 ```
+
+## Quick pointers
+
+- Look at the example, it should make everything obvious
+- All functions are async
+- For write operations (`put, update, updateAddToSet, incrementValue, etc.`), the return type is promise resolving to void unless an error occurs, in which case
+  the promise will reject with that error
+- For read operations (`get, query, scan, queryOnSecondaryIndex, etc.`), the return type is promise resolving to the item
+  (or null if item is not found), a list of items, a count of the items (if `onlyCount` is true) unless an error occurs, in which case the promise will reject with that error
