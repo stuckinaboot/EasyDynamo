@@ -71,12 +71,12 @@ var aws_sdk_1 = __importDefault(require("aws-sdk"));
 var AWS_ERROR_ITEM_NOT_FOUND = "ResourceNotFoundException";
 var ddb;
 var EasyDynamo = /** @class */ (function () {
-    // TODO add type
     function EasyDynamo(config) {
         aws_sdk_1.default.config.update(config);
         ddb = new aws_sdk_1.default.DynamoDB.DocumentClient();
     }
-    EasyDynamo.prototype.get = function (keys, tableName, convertSetsToArrays) {
+    EasyDynamo.prototype.get = function (_a) {
+        var keys = _a.keys, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays;
         var params = {
             TableName: tableName,
             Key: keys,
@@ -89,48 +89,48 @@ var EasyDynamo = /** @class */ (function () {
                         return resolve(null);
                     }
                     reject(err);
+                    return;
                 }
-                else {
-                    var item_1 = data.Item;
-                    if (item_1 == null) {
-                        return resolve(null);
-                    }
-                    if (convertSetsToArrays) {
-                        // Convert each set in res to an array
-                        Object.keys(item_1).forEach(function (key) {
-                            return item_1[key] != null && item_1[key].wrapperName === "Set"
-                                ? (item_1[key] = item_1[key].values)
-                                : null;
-                        });
-                    }
-                    resolve(item_1);
+                var item = data.Item;
+                if (item == null) {
+                    return resolve(null);
                 }
+                if (convertSetsToArrays) {
+                    // Convert each set in res to an array
+                    Object.keys(item).forEach(function (key) {
+                        return item[key] != null && item[key].wrapperName === "Set"
+                            ? (item[key] = item[key].values)
+                            : null;
+                    });
+                }
+                resolve(item);
             });
         });
     };
-    EasyDynamo.prototype.update = function (keys, objToInsert, tableName, convertArraysToSets) {
+    EasyDynamo.prototype.update = function (_a) {
+        var keys = _a.keys, propsToUpdate = _a.propsToUpdate, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
         // Remove table keys from object (as update does not accept these)
-        Object.keys(keys).forEach(function (key) { return delete objToInsert[key]; });
+        Object.keys(keys).forEach(function (key) { return delete propsToUpdate[key]; });
         if (convertArraysToSets) {
             // Convert each array in item to be an AWS set
-            Object.keys(objToInsert).forEach(function (key) {
-                return Array.isArray(objToInsert[key])
-                    ? objToInsert[key].length > 0
-                        ? (objToInsert[key] = ddb.createSet(objToInsert[key]))
+            Object.keys(propsToUpdate).forEach(function (key) {
+                return Array.isArray(propsToUpdate[key])
+                    ? propsToUpdate[key].length > 0
+                        ? (propsToUpdate[key] = ddb.createSet(propsToUpdate[key]))
                         : // Make array null if empty as we can't store empty sets in dynamo
-                            (objToInsert[key] = null)
+                            (propsToUpdate[key] = null)
                     : null;
             });
         }
         var expressionAttributeValues = {};
         var expressionAttributeNames = {};
-        Object.entries(objToInsert).forEach(function (_a) {
+        Object.entries(propsToUpdate).forEach(function (_a) {
             var _b = __read(_a, 2), k = _b[0], v = _b[1];
             expressionAttributeValues[":" + k] = v;
             expressionAttributeNames["#" + k] = k;
         });
         var updateExpression = "set " +
-            Object.keys(objToInsert)
+            Object.keys(propsToUpdate)
                 .map(function (objKey) { return "#" + objKey + "=:" + objKey; })
                 .join(", ");
         var params = {
@@ -141,20 +141,20 @@ var EasyDynamo = /** @class */ (function () {
             UpdateExpression: updateExpression,
         };
         return new Promise(function (resolve, reject) {
-            ddb.update(params, function (err, data) {
+            ddb.update(params, function (err, _data) {
                 if (err) {
                     reject(err);
+                    return;
                 }
-                else {
-                    resolve(data);
-                }
+                resolve();
             });
         });
     };
-    EasyDynamo.prototype.updateAddToSet = function (keys, setAttrName, itemsToInsert, tableName) {
+    EasyDynamo.prototype.updateAddToSet = function (_a) {
+        var keys = _a.keys, setAttrName = _a.setAttrName, itemsToInsert = _a.itemsToInsert, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
             var params;
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
                 params = {
                     TableName: tableName,
                     Key: keys,
@@ -165,19 +165,19 @@ var EasyDynamo = /** @class */ (function () {
                         ddb.update(params, function (err, data) {
                             if (err) {
                                 reject(err);
+                                return;
                             }
-                            else {
-                                resolve(data);
-                            }
+                            resolve();
                         });
                     })];
             });
         });
     };
-    EasyDynamo.prototype.updateDeleteFromSet = function (keys, setAttrName, itemsToRemove, tableName) {
+    EasyDynamo.prototype.updateDeleteFromSet = function (_a) {
+        var keys = _a.keys, setAttrName = _a.setAttrName, itemsToRemove = _a.itemsToRemove, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
             var params;
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
                 params = {
                     TableName: tableName,
                     Key: keys,
@@ -185,40 +185,29 @@ var EasyDynamo = /** @class */ (function () {
                     UpdateExpression: "DELETE " + setAttrName + " :c",
                 };
                 return [2 /*return*/, new Promise(function (resolve, reject) {
-                        ddb.update(params, function (err, data) {
+                        ddb.update(params, function (err, _data) {
                             if (err) {
                                 reject(err);
+                                return;
                             }
-                            else {
-                                resolve(data);
-                            }
+                            resolve();
                         });
                     })];
             });
         });
     };
-    /**
-     * Increment value (handles nested objects)
-     * @param keys keys to identify the entry
-     * @param attrNames sequence of (possibly nested) attr names identifying val to increment
-     * @param tableName table name
-     */
-    EasyDynamo.prototype.incrementValue = function (keys, attrNames, tableName) {
+    EasyDynamo.prototype.incrementValue = function (_a) {
+        var keys = _a.keys, attrNames = _a.attrNames, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
                 return [2 /*return*/, this.updateValueByOne(keys, attrNames, tableName, true)];
             });
         });
     };
-    /**
-     * Decrement value (handles nested objects)
-     * @param keys keys to identify the entry
-     * @param attrNames sequence of (possibly nested) attr names identifying val to decrement
-     * @param tableName table name
-     */
-    EasyDynamo.prototype.decrementValue = function (keys, attrNames, tableName) {
+    EasyDynamo.prototype.decrementValue = function (_a) {
+        var keys = _a.keys, attrNames = _a.attrNames, tableName = _a.tableName;
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
                 return [2 /*return*/, this.updateValueByOne(keys, attrNames, tableName, false)];
             });
         });
@@ -239,22 +228,22 @@ var EasyDynamo = /** @class */ (function () {
                     UpdateExpression: "ADD " + absoluteNestedAttrName + " :c",
                 };
                 return [2 /*return*/, new Promise(function (resolve, reject) {
-                        ddb.update(params, function (err, data) {
+                        ddb.update(params, function (err, _data) {
                             if (err) {
                                 reject(err);
+                                return;
                             }
-                            else {
-                                resolve(data);
-                            }
+                            resolve();
                         });
                     })];
             });
         });
     };
-    EasyDynamo.prototype.put = function (item, tableName, convertArraysToSets) {
+    EasyDynamo.prototype.put = function (_a) {
+        var item = _a.item, tableName = _a.tableName, convertArraysToSets = _a.convertArraysToSets;
         return __awaiter(this, void 0, void 0, function () {
             var params;
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
                 if (convertArraysToSets) {
                     // Convert each array in item to be an AWS set
                     Object.keys(item).forEach(function (key) {
@@ -266,49 +255,47 @@ var EasyDynamo = /** @class */ (function () {
                     Item: item,
                 };
                 return [2 /*return*/, new Promise(function (resolve, reject) {
-                        ddb.put(params, function (err, data) {
+                        ddb.put(params, function (err, _data) {
                             if (err) {
                                 reject(err);
+                                return;
                             }
-                            else {
-                                resolve(data);
-                            }
+                            resolve();
                         });
                     })];
             });
         });
     };
-    EasyDynamo.prototype.delete = function (keys, tableName) {
+    EasyDynamo.prototype.delete = function (_a) {
+        var keys = _a.keys, tableName = _a.tableName;
         var params = {
             TableName: tableName,
             Key: keys,
         };
         return new Promise(function (resolve, reject) {
-            ddb.delete(params, function (err, data) {
+            ddb.delete(params, function (err, _data) {
                 if (err) {
                     reject(err);
+                    return;
                 }
-                else {
-                    resolve(data);
-                }
+                resolve();
             });
         });
     };
-    EasyDynamo.prototype.scan = function (tableName) {
+    EasyDynamo.prototype.scan = function (_a) {
+        var tableName = _a.tableName;
         return new Promise(function (resolve, reject) {
-            ddb.scan({
-                TableName: tableName,
-            }, function (err, data) {
+            ddb.scan({ TableName: tableName }, function (err, data) {
                 if (err) {
                     reject(err);
+                    return;
                 }
-                else {
-                    resolve(data.Items);
-                }
+                resolve(data.Items);
             });
         });
     };
-    EasyDynamo.prototype.query = function (keyName, value, tableName, convertSetsToArrays, scanBackward) {
+    EasyDynamo.prototype.query = function (_a) {
+        var keyName = _a.keyName, value = _a.value, tableName = _a.tableName, convertSetsToArrays = _a.convertSetsToArrays, scanBackward = _a.scanBackward;
         var params = {
             TableName: tableName,
             KeyConditionExpression: "#key = :id",
@@ -329,32 +316,30 @@ var EasyDynamo = /** @class */ (function () {
             ddb.query(params, function (err, data) {
                 if (err) {
                     reject(err);
+                    return;
                 }
-                else {
-                    var items = data.Items;
-                    if (items == null) {
-                        return resolve([]);
-                    }
-                    if (convertSetsToArrays) {
-                        // Convert each set in res to an array
-                        items.forEach(function (item) {
-                            return Object.keys(item).forEach(function (key) {
-                                return item[key] != null && item[key].wrapperName === "Set"
-                                    ? (item[key] = item[key].values)
-                                    : null;
-                            });
+                var items = data.Items;
+                if (items == null) {
+                    return resolve([]);
+                }
+                if (convertSetsToArrays) {
+                    // Convert each set in res to an array
+                    items.forEach(function (item) {
+                        return Object.keys(item).forEach(function (key) {
+                            return item[key] != null && item[key].wrapperName === "Set"
+                                ? (item[key] = item[key].values)
+                                : null;
                         });
-                        return resolve(items);
-                    }
-                    resolve(data.Items);
+                    });
+                    return resolve(items);
                 }
+                resolve(data.Items);
             });
         });
     };
     // Returns either an array or a number (if onlyCount is true)
-    EasyDynamo.prototype.queryOnSecondaryIndex = function (indexName, keyName, value, tableName, 
-    // Only get the count of the items
-    onlyCount, rangeKey) {
+    EasyDynamo.prototype.queryOnSecondaryIndex = function (_a) {
+        var indexName = _a.indexName, keyName = _a.keyName, value = _a.value, tableName = _a.tableName, onlyCount = _a.onlyCount, rangeKey = _a.rangeKey;
         var params = __assign({ TableName: tableName, IndexName: indexName }, (rangeKey == null
             ? {
                 KeyConditionExpression: "#key = :id",
@@ -384,51 +369,46 @@ var EasyDynamo = /** @class */ (function () {
             ddb.query(params, function (err, data) {
                 if (err) {
                     reject(err);
+                    return;
                 }
-                else if (onlyCount) {
+                if (onlyCount) {
                     resolve(data.Count);
+                    return;
                 }
-                else {
-                    resolve(data.Items || []);
-                }
+                resolve(data.Items || []);
             });
         });
     };
-    EasyDynamo.prototype.clearTable = function (tableName, keysToKeep) {
+    EasyDynamo.prototype.clearTable = function (_a) {
+        var tableName = _a.tableName, keyNames = _a.keyNames;
         return __awaiter(this, void 0, void 0, function () {
-            var elts, _a, _b, _i, i, data, j, key, error_1;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0: return [4 /*yield*/, this.scan(tableName)];
+            var elts, _b, _c, _i, i, data, j, key;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0: return [4 /*yield*/, this.scan({ tableName: tableName })];
                     case 1:
-                        elts = _c.sent();
-                        _a = [];
-                        for (_b in elts)
-                            _a.push(_b);
+                        elts = _d.sent();
+                        _b = [];
+                        for (_c in elts)
+                            _b.push(_c);
                         _i = 0;
-                        _c.label = 2;
+                        _d.label = 2;
                     case 2:
-                        if (!(_i < _a.length)) return [3 /*break*/, 7];
-                        i = _a[_i];
+                        if (!(_i < _b.length)) return [3 /*break*/, 5];
+                        i = _b[_i];
                         data = {};
-                        for (j in keysToKeep) {
-                            key = keysToKeep[j];
+                        for (j in keyNames) {
+                            key = keyNames[j];
                             data[key] = elts[i][key];
                         }
-                        _c.label = 3;
+                        return [4 /*yield*/, this.delete({ keys: data, tableName: tableName })];
                     case 3:
-                        _c.trys.push([3, 5, , 6]);
-                        return [4 /*yield*/, this.delete(data, tableName)];
+                        _d.sent();
+                        _d.label = 4;
                     case 4:
-                        _c.sent();
-                        return [3 /*break*/, 6];
-                    case 5:
-                        error_1 = _c.sent();
-                        throw error_1;
-                    case 6:
                         _i++;
                         return [3 /*break*/, 2];
-                    case 7: return [2 /*return*/];
+                    case 5: return [2 /*return*/];
                 }
             });
         });

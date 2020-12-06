@@ -48,21 +48,21 @@ export class EasyDynamo {
           }
 
           reject(err);
-        } else {
-          const item = data.Item;
-          if (item == null) {
-            return resolve(null);
-          }
-          if (convertSetsToArrays) {
-            // Convert each set in res to an array
-            Object.keys(item).forEach((key) =>
-              item[key] != null && item[key].wrapperName === "Set"
-                ? (item[key] = item[key].values)
-                : null
-            );
-          }
-          resolve(item);
+          return;
         }
+        const item = data.Item;
+        if (item == null) {
+          return resolve(null);
+        }
+        if (convertSetsToArrays) {
+          // Convert each set in res to an array
+          Object.keys(item).forEach((key) =>
+            item[key] != null && item[key].wrapperName === "Set"
+              ? (item[key] = item[key].values)
+              : null
+          );
+        }
+        resolve(item);
       });
     });
   }
@@ -125,7 +125,7 @@ export class EasyDynamo {
     setAttrName,
     itemsToInsert,
     tableName,
-  }: EasyDynamoUpdateAddToSetParams) {
+  }: EasyDynamoUpdateAddToSetParams): Promise<void> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -139,7 +139,7 @@ export class EasyDynamo {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
@@ -149,7 +149,7 @@ export class EasyDynamo {
     setAttrName,
     itemsToRemove,
     tableName,
-  }: EasyDynamoDeleteFromSetParams) {
+  }: EasyDynamoDeleteFromSetParams): Promise<void> {
     const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: tableName,
       Key: keys,
@@ -158,12 +158,12 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, (err, data) => {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(data);
+        resolve();
       });
     });
   }
@@ -172,7 +172,7 @@ export class EasyDynamo {
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoIncrementValueParams) {
+  }: EasyDynamoIncrementValueParams): Promise<void> {
     return this.updateValueByOne(keys, attrNames, tableName, true);
   }
 
@@ -180,7 +180,7 @@ export class EasyDynamo {
     keys,
     attrNames,
     tableName,
-  }: EasyDynamoDecrementValueParams) {
+  }: EasyDynamoDecrementValueParams): Promise<void> {
     return this.updateValueByOne(keys, attrNames, tableName, false);
   }
 
@@ -189,7 +189,7 @@ export class EasyDynamo {
     attrNames: string[],
     tableName: string,
     shouldIncrement: boolean
-  ) {
+  ): Promise<void> {
     // Use numbers as attribute name variables since
     let i = 0;
     const expressionAttributeNames = {};
@@ -212,12 +212,12 @@ export class EasyDynamo {
     };
 
     return new Promise((resolve, reject) => {
-      ddb.update(params, function (err, data) {
+      ddb.update(params, (err, _data) => {
         if (err) {
           reject(err);
-        } else {
-          resolve(data);
+          return;
         }
+        resolve();
       });
     });
   }

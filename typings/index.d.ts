@@ -104,7 +104,7 @@ export type EasyDynamoClearTableParams = {
  * Responses
  */
 
-export type EasyDynamoGetResponse = Promise<any>;
+export type EasyDynamoGetResponse = Promise<any | null>;
 export type EasyDynamoQueryResponse = Promise<any[]>;
 // List of items or a single number (if only returning the count)
 export type EasyDynamoQueryOnSecondaryIndexResponse = Promise<any[] | number>;
