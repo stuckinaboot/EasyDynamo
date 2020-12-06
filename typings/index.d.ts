@@ -16,7 +16,10 @@ export type EasyDynamoKeys = { [keyName: string]: EasyDynamoKeyValue };
 export type EasyDynamoConfig = {
   accessKeyId: string;
   secretAccessKey: string;
-  region?: string;
+  region: string;
+  // Include endpoint if you are testing locally with local dynamodb,
+  // e.g. "endpoint": "http://localhost:8000",
+  endpoint?: string;
 };
 
 export type EasyDynamoGetParams = {
