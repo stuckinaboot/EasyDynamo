@@ -1,5 +1,5 @@
 {
-  "name": "easydynamo",
+  "name": "easy-ddb",
   "version": "1.0.0",
   "description": "The simplest way to interact with dynamodb",
   "main": "dist/index.js",
