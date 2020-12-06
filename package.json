@@ -1,6 +1,6 @@
 {
   "name": "easy-ddb",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "The simple way to interact with AWS dynamodb",
   "main": "dist/index.js",
   "scripts": {

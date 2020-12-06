@@ -11,6 +11,12 @@ so you can move data back and forth to dynamo effortlessly.
 
 ## Getting Started
 
+### Install
+
+`npm install easy-ddb`
+
+### Example
+
 **For simplicity, here's example code and output so you can start
 building right away (see `./examples/example.js` for the runnable example)**
 
