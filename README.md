@@ -17,7 +17,7 @@ building right away (see `./examples/example.js` for the runnable example)**
 #### Code
 
 ```
-const EasyDynamo = require("EasyDynamo");
+const EasyDynamo = require("easy-ddb");
 
 // Assume the keys to MyTable are
 // Hash key: myHashKey of type string
