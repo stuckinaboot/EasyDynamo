@@ -30,7 +30,11 @@ export class EasyDynamo {
     ddb = new AWS.DynamoDB.DocumentClient();
   }
 
-  get({
+  /**
+   * Get an item from a dynamo table
+   * @return the item, null if item not found, error if error occurs
+   */
+  async get({
     keys,
     tableName,
     convertSetsToArrays,
@@ -68,6 +72,12 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Update an entry in a dynamo table.
+   * Note: this allows adding a new entry (e.g. if the keys
+   * do not already exist in the table)
+   * @return none, or error if error occurs
+   */
   update({
     keys,
     propsToUpdate,
@@ -121,6 +131,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Add element to a set in a dynamo table.
+   * @return none, or error if error occurs
+   */
   async updateAddToSet({
     keys,
     setAttrName,
@@ -145,6 +159,12 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Delete element from a set in a dynamo table.
+   * Note: this function expects a set to currently exist in
+   * the table and will result in an error if the set does not exist
+   * @return none, or error if error occurs
+   */
   async updateDeleteFromSet({
     keys,
     setAttrName,
@@ -169,6 +189,13 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Increment the value of a particular attribute of a particular entry.
+   * Note: attrNames is the (optionally nested) attribute in this entry. So
+   * an entry that looks like { a : 1 } should have attrNames=["a"] while
+   * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+   * @return none, or error if error occurs
+   */
   async incrementValue({
     keys,
     attrNames,
@@ -177,6 +204,13 @@ export class EasyDynamo {
     return this.updateValueByOne(keys, attrNames, tableName, true);
   }
 
+  /**
+   * Decrement the value of a particular attribute of a particular entry.
+   * Note: attrNames is the (optionally nested) attribute in this entry. So
+   * an entry that looks like { a : 1 } should have attrNames=["a"] while
+   * an entry that looks like { a : { b : 1 }} should have attrNames=["a", "b"]
+   * @return none, or error if error occurs
+   */
   async decrementValue({
     keys,
     attrNames,
@@ -185,6 +219,11 @@ export class EasyDynamo {
     return this.updateValueByOne(keys, attrNames, tableName, false);
   }
 
+  /**
+   * Update a particular attribute value for an entry by one, in either
+   * positive or negative direction depending on shouldIncrement
+   * @return none, or error if error occurs
+   */
   private async updateValueByOne(
     keys: any,
     attrNames: string[],
@@ -223,6 +262,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Add an item to a dynamo table
+   * @return none, or error if error occurs
+   */
   async put({
     item,
     tableName,
@@ -251,6 +294,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Delete an item from a dynamo table
+   * @return none, or error if error occurs
+   */
   delete({
     keys,
     tableName,
@@ -271,6 +318,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Scan a dynamo table
+   * @return list of results of scan, or error if error occurs
+   */
   scan({ tableName }: EasyDynamoScanParams): Promise<EasyDynamoScanResponse> {
     return new Promise((resolve, reject) => {
       ddb.scan({ TableName: tableName }, (err, data) => {
@@ -283,6 +334,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Query a dynamo table
+   * @return list of results of query, or error if error occurs
+   */
   query({
     keyName,
     value,
@@ -335,7 +390,10 @@ export class EasyDynamo {
     });
   }
 
-  // Returns either an array or a number (if onlyCount is true)
+  /**
+   * Query a dynamo table on its secondary index
+   * @return list of results of query (if onlyCount is undefined or false), number (if onlyCount is true), or error if error occurs
+   */
   queryOnSecondaryIndex({
     indexName,
     keyName,
@@ -388,6 +446,10 @@ export class EasyDynamo {
     });
   }
 
+  /**
+   * Clear a dynamo table
+   * @return none, or error if error occurs
+   */
   async clearTable({
     tableName,
     keyNames,

@@ -1,13 +1,13 @@
 {
   "name": "easy-ddb",
   "version": "1.0.0",
-  "description": "The simplest way to interact with dynamodb",
+  "description": "The simplest way to interact with AWS dynamodb",
   "main": "dist/index.js",
   "scripts": {
     "compile": "tsc"
   },
   "author": "Stuckinaboot",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "aws-sdk": "^2.804.0"
   },
