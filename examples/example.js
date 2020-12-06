@@ -1,3 +1,5 @@
+// In your code, use the commented line instead
+// const { EasyDynamo } = require("easy-ddb");
 const { EasyDynamo } = require("../dist/index");
 
 // Assume the keys to MyTable are
