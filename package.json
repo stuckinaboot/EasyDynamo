@@ -1,6 +1,6 @@
 {
   "name": "easy-ddb",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "The simple way to interact with AWS dynamodb",
   "main": "dist/index.js",
   "scripts": {
@@ -26,5 +26,15 @@
   "bugs": {
     "url": "https://github.com/stuckinaboot/EasyDynamo/issues"
   },
-  "homepage": "https://github.com/stuckinaboot/EasyDynamo#readme"
+  "homepage": "https://github.com/stuckinaboot/EasyDynamo#readme",
+  "keywords": [
+    "aws",
+    "dynamo",
+    "dynamodb",
+    "database",
+    "db",
+    "easy",
+    "simple",
+    "wrapper"
+  ]
 }
